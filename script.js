@@ -149,6 +149,71 @@
     }
   }
 
+  function initVisitorCount() {
+    const countEl = document.getElementById("visitor-count");
+    if (!countEl) return;
+
+    fetch(
+      "https://countapi.mileshilliard.com/api/v1/hit/ntuimcamp-web-practice-visits"
+    )
+      .then(function (res) {
+        if (!res.ok) throw new Error("Visitor count request failed");
+        return res.json();
+      })
+      .then(function (data) {
+        countEl.textContent = String(data.value);
+      })
+      .catch(function () {
+        countEl.textContent = "—";
+      });
+  }
+
+  function initMap() {
+    const mapEl = document.getElementById("map");
+    if (!mapEl || typeof L === "undefined") return;
+
+    const taipei101 = [25.0339, 121.5645];
+    const map = L.map(mapEl, { scrollWheelZoom: false }).setView(taipei101, 14);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    }).addTo(map);
+
+    const markerIcon = L.divIcon({
+      className: "map-marker-icon",
+      iconSize: [28, 28],
+      iconAnchor: [14, 28],
+      popupAnchor: [0, -28],
+    });
+
+    L.marker(taipei101, { icon: markerIcon })
+      .addTo(map)
+      .bindPopup("台北 101");
+
+    function refreshMapSize() {
+      map.invalidateSize();
+    }
+
+    if ("IntersectionObserver" in window) {
+      const mapObserver = new IntersectionObserver(
+        function (entries) {
+          entries.forEach(function (entry) {
+            if (entry.isIntersecting) {
+              refreshMapSize();
+              mapObserver.disconnect();
+            }
+          });
+        },
+        { threshold: 0.1 }
+      );
+      mapObserver.observe(mapEl);
+    } else {
+      window.setTimeout(refreshMapSize, 300);
+    }
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
     initTheme();
     if (themeToggle) {
@@ -158,5 +223,7 @@
     initSmoothScroll();
     initReveal();
     initYear();
+    initVisitorCount();
+    initMap();
   });
 })();
